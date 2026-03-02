@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initializeDb } = require('./db/schema');
 
 const app = express();
@@ -18,6 +19,15 @@ app.use('/api/families', require('./routes/families'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// Serve frontend static files
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+
+// SPA fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
+
 app.listen(PORT, () => {
-  console.log(`Meal Tracker API running on http://localhost:${PORT}`);
+  console.log(`Meal Tracker running on http://localhost:${PORT}`);
 });
