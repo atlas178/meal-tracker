@@ -1,21 +1,128 @@
-const Database = require('better-sqlite3');
+const initSqlJs = require('sql.js');
 const path = require('path');
+const fs = require('fs');
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', '..', 'meal-tracker.db');
 
 let db;
+let SQL;
+
+// Wrapper to mimic better-sqlite3 API
+class Statement {
+  constructor(db, sql) {
+    this.db = db;
+    this.sql = sql;
+  }
+
+  run(...params) {
+    this.db.run(this.sql, params);
+    return { changes: this.db.getRowsModified(), lastInsertRowid: this._getLastId() };
+  }
+
+  get(...params) {
+    const stmt = this.db.prepare(this.sql);
+    stmt.bind(params);
+    if (stmt.step()) {
+      const result = stmt.getAsObject();
+      stmt.free();
+      return result;
+    }
+    stmt.free();
+    return undefined;
+  }
+
+  all(...params) {
+    const results = [];
+    const stmt = this.db.prepare(this.sql);
+    stmt.bind(params);
+    while (stmt.step()) {
+      results.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return results;
+  }
+
+  _getLastId() {
+    const stmt = this.db.prepare('SELECT last_insert_rowid() as id');
+    stmt.step();
+    const result = stmt.getAsObject();
+    stmt.free();
+    return result.id;
+  }
+}
+
+class DbWrapper {
+  constructor(sqlDb) {
+    this.sqlDb = sqlDb;
+  }
+
+  prepare(sql) {
+    return new Statement(this.sqlDb, sql);
+  }
+
+  exec(sql) {
+    this.sqlDb.run(sql);
+  }
+
+  pragma(pragmaStr) {
+    try {
+      this.sqlDb.run(`PRAGMA ${pragmaStr}`);
+    } catch (e) {
+      // Some pragmas may not be supported in sql.js
+    }
+  }
+
+  transaction(fn) {
+    return (...args) => {
+      this.sqlDb.run('BEGIN TRANSACTION');
+      try {
+        fn(...args);
+        this.sqlDb.run('COMMIT');
+        this._save();
+      } catch (e) {
+        this.sqlDb.run('ROLLBACK');
+        throw e;
+      }
+    };
+  }
+
+  _save() {
+    try {
+      const data = this.sqlDb.export();
+      const buffer = Buffer.from(data);
+      fs.writeFileSync(DB_PATH, buffer);
+    } catch (e) {
+      console.error('Failed to save DB:', e.message);
+    }
+  }
+}
 
 function getDb() {
   if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
+    throw new Error('Database not initialized. Call initializeDb() first.');
   }
   return db;
 }
 
-function initializeDb() {
-  const db = getDb();
+async function initializeDb() {
+  SQL = await initSqlJs();
+
+  let sqlDb;
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      const fileBuffer = fs.readFileSync(DB_PATH);
+      sqlDb = new SQL.Database(fileBuffer);
+    } else {
+      sqlDb = new SQL.Database();
+    }
+  } catch (e) {
+    sqlDb = new SQL.Database();
+  }
+
+  db = new DbWrapper(sqlDb);
+
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -83,6 +190,9 @@ function initializeDb() {
   `);
 
   seedFoods(db);
+
+  // Save initial state
+  db._save();
 }
 
 function seedFoods(db) {
