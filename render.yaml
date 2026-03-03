@@ -2,13 +2,10 @@ services:
   - type: web
     name: meal-tracker
     runtime: node
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm run dev
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && npm install
+    startCommand: cd backend && node src/index.js
     envVars:
       - key: PORT
         value: 3001
-    routes:
-      - path: /api
-        service: meal-tracker
-      - path: /
-        service: meal-tracker
+      - key: NODE_ENV
+        value: production
