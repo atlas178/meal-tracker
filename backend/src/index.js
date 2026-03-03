@@ -24,6 +24,8 @@ async function start() {
   app.use('/api/meals', require('./routes/photolog'));
   app.use('/api/families', require('./routes/families'));
 
+  app.use('/api/session-health', require('./routes/sessionHealth'));
+  app.use('/api/notification-rules', require('./routes/notificationRules'));
   app.use('/api/agent-status', require('./routes/agentStatus'));
 
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
