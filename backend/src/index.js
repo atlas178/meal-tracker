@@ -24,6 +24,8 @@ async function start() {
   app.use('/api/meals', require('./routes/photolog'));
   app.use('/api/families', require('./routes/families'));
 
+  app.use('/api/agent-status', require('./routes/agentStatus'));
+
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
   // SPA fallback
