@@ -35,6 +35,11 @@ export const api = {
   updateMeal: (id, body) => request(`/meals/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
 
+  // Scanning
+  scanBarcode: (barcode) => request('/foods/scan-barcode', { method: 'POST', body: JSON.stringify({ barcode }) }),
+  scanLabel: (image) => request('/foods/scan-label', { method: 'POST', body: JSON.stringify({ image }) }),
+  photoLog: (image) => request('/meals/photo-log', { method: 'POST', body: JSON.stringify({ image }) }),
+
   // Families
   getFamilies: () => request('/families'),
   createFamily: (body) => request('/families', { method: 'POST', body: JSON.stringify(body) }),

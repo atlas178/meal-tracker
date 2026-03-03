@@ -9,6 +9,7 @@ import Analytics from './pages/Analytics';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import Family from './pages/Family';
+import Scan from './pages/Scan';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/log" element={<PrivateRoute><LogMeal /></PrivateRoute>} />
+          <Route path="/scan" element={<PrivateRoute><Scan /></PrivateRoute>} />
           <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />

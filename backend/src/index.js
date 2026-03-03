@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Serve frontend static files
 const frontendDist = path.join(__dirname, '../../frontend/dist');
@@ -20,6 +20,8 @@ async function start() {
   app.use('/api/auth', require('./routes/auth'));
   app.use('/api/meals', require('./routes/meals'));
   app.use('/api/foods', require('./routes/foods'));
+  app.use('/api/foods', require('./routes/scan'));
+  app.use('/api/meals', require('./routes/photolog'));
   app.use('/api/families', require('./routes/families'));
 
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

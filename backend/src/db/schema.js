@@ -9,14 +9,17 @@ let SQL;
 
 // Wrapper to mimic better-sqlite3 API
 class Statement {
-  constructor(db, sql) {
+  constructor(db, sql, wrapper) {
     this.db = db;
     this.sql = sql;
+    this.wrapper = wrapper;
   }
 
   run(...params) {
     this.db.run(this.sql, params);
-    return { changes: this.db.getRowsModified(), lastInsertRowid: this._getLastId() };
+    const result = { changes: this.db.getRowsModified(), lastInsertRowid: this._getLastId() };
+    if (this.wrapper) this.wrapper._save();
+    return result;
   }
 
   get(...params) {
@@ -57,7 +60,7 @@ class DbWrapper {
   }
 
   prepare(sql) {
-    return new Statement(this.sqlDb, sql);
+    return new Statement(this.sqlDb, sql, this);
   }
 
   exec(sql) {
